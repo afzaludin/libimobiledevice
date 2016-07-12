@@ -20,6 +20,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -142,10 +146,10 @@ static void mobilebackup_afc_get_file_contents(afc_client_t afc, const char *fil
 		uint32_t bread = 0;
 		afc_file_read(afc, f, buf+done, 65536, &bread);
 		if (bread > 0) {
+			done += bread;
 		} else {
 			break;
 		}
-		done += bread;
 	}
 	if (done == fsize) {
 		*size = fsize;
@@ -219,7 +223,7 @@ static plist_t mobilebackup_factory_info_plist_new(const char* udid, lockdownd_c
 	if (value_node)
 		plist_dict_set_item(ret, "IMEI", plist_copy(value_node));
 
-	plist_dict_set_item(ret, "Last Backup Date", plist_new_date(time(NULL), 0));
+	plist_dict_set_item(ret, "Last Backup Date", plist_new_date(time(NULL) - MAC_EPOCH, 0));
 
 	value_node = plist_dict_get_item(root_node, "PhoneNumber");
 	if (value_node && (plist_get_node_type(value_node) == PLIST_STRING)) {
@@ -910,7 +914,8 @@ static void mb2_handle_list_directory(mobilebackup2_client_t mobilebackup2, plis
 				}
 				plist_dict_set_item(fdict, "DLFileType", plist_new_string(ftype));
 				plist_dict_set_item(fdict, "DLFileSize", plist_new_uint(st.st_size));
-				plist_dict_set_item(fdict, "DLFileModificationDate", plist_new_date(st.st_mtime, 0));
+				plist_dict_set_item(fdict, "DLFileModificationDate",
+						    plist_new_date(st.st_mtime - MAC_EPOCH, 0));
 
 				plist_dict_set_item(dirlist, ep->d_name, fdict);
 				free(fpath);
@@ -1139,7 +1144,7 @@ static void print_usage(int argc, char **argv)
 	printf("  -i, --interactive\trequest passwords interactively\n");
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("Homepage: <" PACKAGE_URL ">\n");
 }
 
 int main(int argc, char *argv[])
